@@ -40,13 +40,17 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_async_engine(DATABASE_URL, echo=True)
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-# ✅ FIXED Weaviate Connection (remote)
+import os
+import weaviate
+
 WEAVIATE_URL = os.getenv("WEAVIATE_URL")
 
-weaviate_client = weaviate.Client(
-    url=WEAVIATE_URL
+weaviate_client = weaviate.connect_to_custom(
+    http_host=WEAVIATE_URL.replace("https://", "").replace("http://", ""),
+    http_port=443,
+    http_secure=True,
+    skip_init_checks=True
 )
-
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
