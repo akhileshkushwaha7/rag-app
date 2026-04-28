@@ -43,14 +43,8 @@ async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False
 # ✅ FIXED Weaviate Connection (remote)
 WEAVIATE_URL = os.getenv("WEAVIATE_URL")
 
-weaviate_client = weaviate.connect_to_custom(
-    http_host=WEAVIATE_URL.replace("https://", "").replace("http://", ""),
-    http_port=443,
-    http_secure=True,
-    grpc_host=WEAVIATE_URL.replace("https://", "").replace("http://", ""),
-    grpc_port=443,
-    grpc_secure=True,
-    skip_init_checks=True
+weaviate_client = weaviate.Client(
+    url=WEAVIATE_URL
 )
 
 async def init_db():
