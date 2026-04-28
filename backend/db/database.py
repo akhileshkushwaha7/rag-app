@@ -26,11 +26,11 @@
 #         yield session
 
 import os
+import weaviate
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from models.base import Base
-import weaviate
 
 load_dotenv()
 
@@ -39,10 +39,7 @@ load_dotenv()
 # =========================
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-engine = create_async_engine(
-    DATABASE_URL,
-    echo=True
-)
+engine = create_async_engine(DATABASE_URL, echo=True)
 
 async_session = sessionmaker(
     engine,
@@ -51,26 +48,24 @@ async_session = sessionmaker(
 )
 
 # =========================
-# Weaviate (Render-safe)
+# Weaviate (FINAL FIX)
 # =========================
 WEAVIATE_URL = os.getenv("WEAVIATE_URL")
 
-# IMPORTANT:
-# Works with older + mixed weaviate-client installs on Render
-weaviate_client = weaviate.connect_to_wcs(
-    cluster_url=WEAVIATE_URL,
-    auth_credentials=None  # because anonymous access is enabled
+weaviate_client = weaviate.Client(
+    url=WEAVIATE_URL,
+    additional_headers={}
 )
 
 # =========================
-# Init DB
+# DB INIT
 # =========================
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
 # =========================
-# DB Session
+# SESSION
 # =========================
 async def get_db_session() -> AsyncSession:
     async with async_session() as session:
