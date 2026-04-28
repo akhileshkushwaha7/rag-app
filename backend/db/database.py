@@ -65,9 +65,22 @@ weaviate_client = None
 
 def init_weaviate():
     global weaviate_client
-    weaviate_client = weaviate.Client(
-        url=WEAVIATE_URL
-    )
+
+    try:
+        weaviate_client = weaviate.connect_to_custom(
+            http_host="weaviate-service-99kh.onrender.com",
+            http_port=443,
+            http_secure=True,
+            grpc_host="weaviate-service-99kh.onrender.com",
+            grpc_port=443,
+            grpc_secure=True,
+        )
+
+        print("✅ Weaviate connected")
+
+    except Exception as e:
+        print(f"⚠️ Weaviate connection failed: {e}")
+        weaviate_client = None
 
 async def init_db():
     async with engine.begin() as conn:
