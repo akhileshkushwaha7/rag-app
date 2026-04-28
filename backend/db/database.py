@@ -87,6 +87,9 @@ import os
 
 weaviate_client = None
 
+def get_weaviate():
+    return weaviate_client
+    
 def init_weaviate():
     global weaviate_client
 
