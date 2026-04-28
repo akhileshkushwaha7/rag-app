@@ -41,7 +41,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from db.database import init_db, weaviate # Import the client
-from db.database import init_db, init_weaviate, weaviate_client
+from db.database import init_db, weaviate_client
 from routers import auth, chat
 from services.rag_service import create_weaviate_schema
 
