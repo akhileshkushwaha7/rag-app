@@ -35,26 +35,40 @@ from models.base import Base
 
 load_dotenv()
 
+# =========================
 # PostgreSQL Connection
+# =========================
 DATABASE_URL = os.getenv("DATABASE_URL")
+
 engine = create_async_engine(DATABASE_URL, echo=True)
-async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+async_session = sessionmaker(
+    engine,
+    class_=AsyncSession,
+    expire_on_commit=False
+)
 
-import os
-import weaviate
-
+# =========================
+# Weaviate Connection (FIXED)
+# =========================
 WEAVIATE_URL = os.getenv("WEAVIATE_URL")
 
-weaviate_client = weaviate.connect_to_custom(
-    http_host=WEAVIATE_URL.replace("https://", "").replace("http://", ""),
-    http_port=443,
-    http_secure=True,
+weaviate_client = weaviate.connect_to_http(
+    host=WEAVIATE_URL.replace("https://", "").replace("http://", ""),
+    port=443,
+    secure=True,
     skip_init_checks=True
 )
+
+# =========================
+# DB Init
+# =========================
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
+# =========================
+# DB Session
+# =========================
 async def get_db_session() -> AsyncSession:
     async with async_session() as session:
         yield session
