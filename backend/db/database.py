@@ -60,7 +60,6 @@ async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False
 
 WEAVIATE_URL = os.getenv("WEAVIATE_URL")
 
-# ❌ REMOVE global connection
 weaviate_client = None
 
 def init_weaviate():
@@ -69,11 +68,12 @@ def init_weaviate():
     try:
         weaviate_client = weaviate.connect_to_custom(
             http_host="weaviate-service-99kh.onrender.com",
-            http_port=443,
-            http_secure=True,
+            http_port=80,          # ✅ HTTP PORT (NOT 443)
+            http_secure=False,
+
             grpc_host="weaviate-service-99kh.onrender.com",
-            grpc_port=443,
-            grpc_secure=True,
+            grpc_port=50051,       # ✅ MUST be different
+            grpc_secure=False,
         )
 
         print("✅ Weaviate connected")
