@@ -74,33 +74,70 @@ weaviate_client = None
 # =========================
 # 🔌 WEAVIATE ACCESSOR
 # =========================
+# def get_weaviate():
+#     return weaviate_client
+
+
+# # =========================
+# # 🚀 INIT WEAVIATE (RENDER SAFE)
+# # =========================
+# def init_weaviate():
+#     global weaviate_client
+
+#     try:
+#         weaviate_client = weaviate.connect_to_custom(
+#             http_host="weaviate-service-99kh.onrender.com",
+#             http_port=443,
+#             http_secure=True,
+
+#             grpc_host="weaviate-service-99kh.onrender.com",
+#             grpc_port=443,
+#             grpc_secure=True,
+#         )
+
+#         print("✅ Weaviate connected")
+
+#     except Exception as e:
+#         print(f"⚠️ Weaviate connection failed: {e}")
+#         weaviate_client = None
+# db/database.py
+import os
+import weaviate
+from weaviate.classes.init import Auth
+
+_weaviate_client = None
+
 def get_weaviate():
-    return weaviate_client
+    global _weaviate_client
 
+    # Return existing client if it's still alive
+    if _weaviate_client is not None:
+        try:
+            _weaviate_client.is_ready()
+            return _weaviate_client
+        except Exception:
+            _weaviate_client = None  # Reset if connection dropped
 
-# =========================
-# 🚀 INIT WEAVIATE (RENDER SAFE)
-# =========================
-def init_weaviate():
-    global weaviate_client
+    weaviate_url = os.getenv("WEAVIATE_URL")  # e.g. https://weaviate-service-99kh.onrender.com
+
+    if not weaviate_url:
+        print("❌ WEAVIATE_URL env var is not set")
+        return None
 
     try:
-        weaviate_client = weaviate.connect_to_custom(
-            http_host="weaviate-service-99kh.onrender.com",
+        _weaviate_client = weaviate.connect_to_custom(
+            http_host=weaviate_url.replace("https://", "").replace("http://", ""),
             http_port=443,
             http_secure=True,
-
-            grpc_host="weaviate-service-99kh.onrender.com",
+            grpc_host=weaviate_url.replace("https://", "").replace("http://", ""),
             grpc_port=443,
             grpc_secure=True,
         )
-
-        print("✅ Weaviate connected")
-
+        print(f"✅ Weaviate connected: {weaviate_url}")
+        return _weaviate_client
     except Exception as e:
-        print(f"⚠️ Weaviate connection failed: {e}")
-        weaviate_client = None
-
+        print(f"❌ Weaviate connection failed: {e}")
+        return None
 
 # =========================
 # 🗄️ DB INIT
