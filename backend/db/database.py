@@ -1,3 +1,31 @@
+# import os
+# import weaviate
+# from dotenv import load_dotenv
+# from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+# from sqlalchemy.orm import sessionmaker
+# from models.base import Base
+
+# load_dotenv()
+
+
+# # PostgreSQL Connection
+# DATABASE_URL = os.getenv("DATABASE_URL")
+# engine = create_async_engine(DATABASE_URL, echo=True)
+# async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+# # Weaviate v4 Connection
+# # Key Change: Use connect_to_local() for the modern v4 client
+# weaviate_client = weaviate.connect_to_local(skip_init_checks=True)
+
+# async def init_db():
+#     async with engine.begin() as conn:
+#         await conn.run_sync(Base.metadata.create_all)
+
+# async def get_db_session() -> AsyncSession:
+#     async with async_session() as session:
+#         yield session
+
+
 import os
 import weaviate
 from dotenv import load_dotenv
@@ -7,15 +35,23 @@ from models.base import Base
 
 load_dotenv()
 
-
 # PostgreSQL Connection
 DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_async_engine(DATABASE_URL, echo=True)
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-# Weaviate v4 Connection
-# Key Change: Use connect_to_local() for the modern v4 client
-weaviate_client = weaviate.connect_to_local(skip_init_checks=True)
+# ✅ FIXED Weaviate Connection (remote)
+WEAVIATE_URL = os.getenv("WEAVIATE_URL")
+
+weaviate_client = weaviate.connect_to_custom(
+    http_host=WEAVIATE_URL.replace("https://", "").replace("http://", ""),
+    http_port=443,
+    http_secure=True,
+    grpc_host=WEAVIATE_URL.replace("https://", "").replace("http://", ""),
+    grpc_port=443,
+    grpc_secure=True,
+    skip_init_checks=True
+)
 
 async def init_db():
     async with engine.begin() as conn:
@@ -24,4 +60,3 @@ async def init_db():
 async def get_db_session() -> AsyncSession:
     async with async_session() as session:
         yield session
-
