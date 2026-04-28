@@ -89,6 +89,10 @@ def init_weaviate():
             http_host="weaviate-service-99kh.onrender.com",
             http_port=443,
             http_secure=True,
+
+            grpc_host="weaviate-service-99kh.onrender.com",
+            grpc_port=443,
+            grpc_secure=True,
         )
 
         print("✅ Weaviate connected")
