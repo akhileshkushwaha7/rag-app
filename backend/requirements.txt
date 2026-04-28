@@ -5,6 +5,8 @@ argon2-cffi-bindings==21.2.0
 asn1crypto==1.5.1
 boto3==1.28.82
 botocore==1.31.85
+bcrypt
+passlib[bcrypt]
 certifi==2025.1.31
 cffi==1.17.1
 charset-normalizer==3.4.1
