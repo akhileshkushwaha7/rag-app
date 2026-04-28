@@ -162,10 +162,16 @@ def get_embedding_model() -> TextEmbedding:
 # 📦 CREATE SCHEMA
 # =========================
 def create_weaviate_schema():
+    global weaviate_client
+
+    if weaviate_client is None:
+        print("⚠️ Skipping schema creation (Weaviate not connected)")
+        return
+
     try:
-        if not weaviate_client.collections.exists(COLLECTION_NAME):
+        if not weaviate_client.collections.exists("DocumentChunk"):
             weaviate_client.collections.create(
-                name=COLLECTION_NAME,
+                name="DocumentChunk",
                 vector_config=wvc.Configure.Vectors.self_provided(),
                 properties=[
                     wvc.Property(name="content", data_type=wvc.DataType.TEXT),
@@ -173,8 +179,9 @@ def create_weaviate_schema():
                     wvc.Property(name="file_id", data_type=wvc.DataType.UUID),
                 ]
             )
+
     except Exception as e:
-        raise RuntimeError(f"Schema creation failed: {str(e)}")
+        print(f"⚠️ Schema creation failed: {e}")
 
 
 # =========================
