@@ -40,25 +40,26 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from db.database import init_db, weaviate # Import the client
-from db.database import init_db, weaviate_client
+from db.database import init_db, init_weaviate, weaviate_client
 from routers import auth, chat
 from services.rag_service import create_weaviate_schema
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # On startup
+    # Startup
     await init_db()
-    # init_weaviate()
+    init_weaviate()
     create_weaviate_schema()
     yield
-    # On shutdown
-    weaviate_client.close() # Key Change: Close the client connection
+    # Shutdown
+    if weaviate_client is not None:
+        weaviate_client.close()
+        print("✅ Weaviate connection closed")
 
 
 app = FastAPI(lifespan=lifespan)
 
-# CORS Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
