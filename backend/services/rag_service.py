@@ -237,8 +237,12 @@ def process_and_embed_file(
 
         vectors = embed_texts(texts)
 
-        collection = weaviate_client.collections.get(COLLECTION_NAME)
-
+        # collection = weaviate_client.collections.get(COLLECTION_NAME)
+        client = get_weaviate()
+        if client is None:
+            raise RuntimeError("Weaviate not initialized")
+        collection = client.collections.get(COLLECTION_NAME)
+        
         with collection.batch.fixed_size(50) as batch:
             for chunk, vector in zip(chunks, vectors):
                 data_object = {
