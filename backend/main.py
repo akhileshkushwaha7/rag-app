@@ -55,6 +55,7 @@ async def lifespan(app: FastAPI):
     # On shutdown
     weaviate_client.close() # Key Change: Close the client connection
 
+
 app = FastAPI(lifespan=lifespan)
 
 # CORS Middleware
