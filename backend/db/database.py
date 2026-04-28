@@ -62,18 +62,38 @@ WEAVIATE_URL = os.getenv("WEAVIATE_URL")
 
 weaviate_client = None
 
+# def init_weaviate():
+#     global weaviate_client
+
+#     try:
+#         weaviate_client = weaviate.connect_to_custom(
+#             http_host="weaviate-service-99kh.onrender.com",
+#             http_port=80,          # ✅ HTTP PORT (NOT 443)
+#             http_secure=False,
+
+#             grpc_host="weaviate-service-99kh.onrender.com",
+#             grpc_port=50051,       # ✅ MUST be different
+#             grpc_secure=False,
+#         )
+
+#         print("✅ Weaviate connected")
+
+#     except Exception as e:
+#         print(f"⚠️ Weaviate connection failed: {e}")
+#         weaviate_client = None
+
+import weaviate
+import os
+
+weaviate_client = None
+
 def init_weaviate():
     global weaviate_client
 
     try:
-        weaviate_client = weaviate.connect_to_custom(
-            http_host="weaviate-service-99kh.onrender.com",
-            http_port=80,          # ✅ HTTP PORT (NOT 443)
-            http_secure=False,
-
-            grpc_host="weaviate-service-99kh.onrender.com",
-            grpc_port=50051,       # ✅ MUST be different
-            grpc_secure=False,
+        weaviate_client = weaviate.connect_to_wcs(
+            cluster_url="https://weaviate-service-99kh.onrender.com",
+            auth_credentials=None  # if no API key
         )
 
         print("✅ Weaviate connected")
