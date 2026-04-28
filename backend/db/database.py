@@ -34,32 +34,23 @@ from models.base import Base
 
 load_dotenv()
 
-# =========================
-# PostgreSQL
-# =========================
+# PostgreSQL Connection
 DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_async_engine(DATABASE_URL, echo=True)
-
-async_session = sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False
-)
+async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 # =========================
-# Weaviate (CORRECT v4)
+# Weaviate Remote (Render)
 # =========================
 WEAVIATE_URL = os.getenv("WEAVIATE_URL")
 
-weaviate_client = weaviate.connect_to_weaviate_cloud(
-    cluster_url=WEAVIATE_URL,
-    auth_credentials=None,  # because anonymous access is enabled
+weaviate_client = weaviate.connect_to_http(
+    host=WEAVIATE_URL.replace("https://", "").replace("http://", ""),
+    port=443,
+    secure=True,
     skip_init_checks=True
 )
 
-# =========================
-# DB INIT
-# =========================
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
