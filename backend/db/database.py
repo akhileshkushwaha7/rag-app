@@ -82,21 +82,50 @@ weaviate_client = None
 #         print(f"⚠️ Weaviate connection failed: {e}")
 #         weaviate_client = None
 
-import weaviate
 import os
+import weaviate
+from dotenv import load_dotenv
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+from models.base import Base
+
+load_dotenv()
+
+# =========================
+# 🗄️ POSTGRES
+# =========================
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+engine = create_async_engine(DATABASE_URL, echo=True)
+async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+
+# =========================
+# 🧠 WEAVIATE CONFIG
+# =========================
+WEAVIATE_URL = os.getenv("WEAVIATE_URL")
 
 weaviate_client = None
 
+
+# =========================
+# 🔌 WEAVIATE ACCESSOR
+# =========================
 def get_weaviate():
     return weaviate_client
-    
+
+
+# =========================
+# 🚀 INIT WEAVIATE (RENDER SAFE)
+# =========================
 def init_weaviate():
     global weaviate_client
 
     try:
-        weaviate_client = weaviate.connect_to_wcs(
-            cluster_url="https://weaviate-service-99kh.onrender.com",
-            auth_credentials=None  # if no API key
+        weaviate_client = weaviate.connect_to_custom(
+            http_host="weaviate-service-99kh.onrender.com",
+            http_port=443,
+            http_secure=True,
         )
 
         print("✅ Weaviate connected")
@@ -105,10 +134,18 @@ def init_weaviate():
         print(f"⚠️ Weaviate connection failed: {e}")
         weaviate_client = None
 
+
+# =========================
+# 🗄️ DB INIT
+# =========================
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
+
+# =========================
+# 🔁 SESSION
+# =========================
 async def get_db_session() -> AsyncSession:
     async with async_session() as session:
         yield session
