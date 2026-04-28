@@ -49,7 +49,7 @@ from services.rag_service import create_weaviate_schema
 async def lifespan(app: FastAPI):
     # On startup
     await init_db()
-    init_weaviate()
+    # init_weaviate()
     create_weaviate_schema()
     yield
     # On shutdown
