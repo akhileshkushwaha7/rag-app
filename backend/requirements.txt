@@ -9,6 +9,7 @@ bcrypt
 passlib[bcrypt]
 certifi==2025.1.31
 cffi==1.17.1
+langchain-community
 charset-normalizer==3.4.1
 email-validator
 click==8.2.1
