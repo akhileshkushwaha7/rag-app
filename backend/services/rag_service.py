@@ -116,14 +116,13 @@
 
 import uuid
 import os
-from typing import List
+from typing import List, Optional
 
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-
 from fastembed import TextEmbedding
 
-from db.database import weaviate_client
+from db.database import get_weaviate
 import weaviate.classes.config as wvc
 from weaviate.classes.query import Filter
 from weaviate.util import generate_uuid5
@@ -140,16 +139,17 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 # ⚡ CONFIG
 # =========================
 COLLECTION_NAME = "DocumentChunk"
-EMBED_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"  # lightweight
+EMBED_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 CHUNK_SIZE = 300
 CHUNK_OVERLAP = 50
 BATCH_SIZE = 16
 
 
 # =========================
-# 🧠 LAZY MODEL LOADER
+# 🧠 LAZY EMBEDDING MODEL
 # =========================
-_embedding_model = None
+_embedding_model: Optional[TextEmbedding] = None
+
 
 def get_embedding_model() -> TextEmbedding:
     global _embedding_model
@@ -162,16 +162,16 @@ def get_embedding_model() -> TextEmbedding:
 # 📦 CREATE SCHEMA
 # =========================
 def create_weaviate_schema():
-    global weaviate_client
+    client = get_weaviate()
 
-    if weaviate_client is None:
-        print("⚠️ Skipping schema creation (Weaviate not connected)")
+    if client is None:
+        print("⚠️ Weaviate not connected → skipping schema creation")
         return
 
     try:
-        if not weaviate_client.collections.exists("DocumentChunk"):
-            weaviate_client.collections.create(
-                name="DocumentChunk",
+        if not client.collections.exists(COLLECTION_NAME):
+            client.collections.create(
+                name=COLLECTION_NAME,
                 vector_config=wvc.Configure.Vectors.self_provided(),
                 properties=[
                     wvc.Property(name="content", data_type=wvc.DataType.TEXT),
@@ -185,7 +185,7 @@ def create_weaviate_schema():
 
 
 # =========================
-# 🔪 TEXT SPLITTER
+# 🔪 SPLITTER
 # =========================
 def get_text_splitter():
     return RecursiveCharacterTextSplitter(
@@ -196,12 +196,12 @@ def get_text_splitter():
 
 
 # =========================
-# ⚡ BATCH EMBEDDING
+# ⚡ EMBEDDINGS
 # =========================
 def embed_texts(texts: List[str]) -> List[List[float]]:
     model = get_embedding_model()
-    vectors = []
 
+    vectors = []
     for i in range(0, len(texts), BATCH_SIZE):
         batch = texts[i:i + BATCH_SIZE]
         vectors.extend(list(model.embed(batch)))
@@ -212,16 +212,13 @@ def embed_texts(texts: List[str]) -> List[List[float]]:
 # =========================
 # 📄 PROCESS + EMBED FILE
 # =========================
-def process_and_embed_file(
-    file_path: str,
-    user_id: uuid.UUID,
-    file_id: uuid.UUID
-) -> int:
-
+def process_and_embed_file(file_path: str, user_id: uuid.UUID, file_id: uuid.UUID) -> int:
     try:
-        loader = PyPDFLoader(file_path)
+        client = get_weaviate()
+        if client is None:
+            raise RuntimeError("Weaviate not initialized")
 
-        # Lazy load prevents RAM spike
+        loader = PyPDFLoader(file_path)
         documents = list(loader.lazy_load())
 
         if not documents:
@@ -231,18 +228,13 @@ def process_and_embed_file(
         chunks = splitter.split_documents(documents)
 
         texts = [c.page_content for c in chunks if c.page_content.strip()]
-
         if not texts:
             return 0
 
         vectors = embed_texts(texts)
 
-        # collection = weaviate_client.collections.get(COLLECTION_NAME)
-        client = get_weaviate()
-        if client is None:
-            raise RuntimeError("Weaviate not initialized")
         collection = client.collections.get(COLLECTION_NAME)
-        
+
         with collection.batch.fixed_size(50) as batch:
             for chunk, vector in zip(chunks, vectors):
                 data_object = {
@@ -266,18 +258,16 @@ def process_and_embed_file(
 # =========================
 # 🔍 QUERY VECTOR DB
 # =========================
-def query_weaviate(
-    query: str,
-    user_id: uuid.UUID,
-    file_ids: List[uuid.UUID],
-    limit: int = 5
-) -> List[str]:
-
+def query_weaviate(query: str, user_id: uuid.UUID, file_ids: List[uuid.UUID], limit: int = 5) -> List[str]:
     try:
+        client = get_weaviate()
+        if client is None:
+            raise RuntimeError("Weaviate not initialized")
+
         model = get_embedding_model()
         query_vector = list(model.embed([query]))[0]
 
-        collection = weaviate_client.collections.get(COLLECTION_NAME)
+        collection = client.collections.get(COLLECTION_NAME)
 
         file_id_strs = [str(fid) for fid in file_ids]
 
