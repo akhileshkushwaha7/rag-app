@@ -50,28 +50,70 @@ from routers import auth, chat
 from services.rag_service import create_weaviate_schema
 
 
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     # =========================
+#     # 🚀 STARTUP
+#     # =========================
+#     await init_db()
+#     init_weaviate()
+
+#     if database.weaviate_client is None:
+#         print("❌ Weaviate NOT initialized - stopping startup")
+#     else:
+#         create_weaviate_schema()
+
+#     yield
+
+#     # =========================
+#     # 🧹 SHUTDOWN
+#     # =========================
+#     if database.weaviate_client is not None:
+#         database.weaviate_client.close()
+#         print("✅ Weaviate connection closed")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # =========================
     # 🚀 STARTUP
     # =========================
+    print("🚀 Starting application...")
+
     await init_db()
+
+    # Init Weaviate
     init_weaviate()
 
-    if database.weaviate_client is None:
-        print("❌ Weaviate NOT initialized - stopping startup")
+    # 🔴 HARD CHECK (not just None check)
+    client = database.weaviate_client
+
+    if client is None:
+        print("❌ Weaviate failed to initialize")
     else:
-        create_weaviate_schema()
+        try:
+            # 🔥 verify actual connection
+            if hasattr(client, "is_ready") and not client.is_ready():
+                print("❌ Weaviate not ready")
+            else:
+                print("✅ Weaviate connected successfully")
+                create_weaviate_schema()
+
+        except Exception as e:
+            print(f"❌ Weaviate health check failed: {e}")
+            database.weaviate_client = None
 
     yield
 
     # =========================
     # 🧹 SHUTDOWN
     # =========================
-    if database.weaviate_client is not None:
-        database.weaviate_client.close()
-        print("✅ Weaviate connection closed")
+    print("🧹 Shutting down...")
 
+    if database.weaviate_client is not None:
+        try:
+            database.weaviate_client.close()
+            print("✅ Weaviate connection closed")
+        except Exception as e:
+            print(f"⚠️ Error closing Weaviate: {e}")
 
 app = FastAPI(lifespan=lifespan)
 
