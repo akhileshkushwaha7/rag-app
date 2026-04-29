@@ -381,15 +381,45 @@ def process_and_embed_file(file_path: str, user_id: str, file_id: str) -> int:
 # =========================
 # 🔍 QUERY FUNCTION
 # =========================
+# def query_weaviate(query: str, user_id: str, limit: int = 5):
+#     try:
+#         client = get_client()
+
+#         query_vector = generate_embedding(query)
+
+#         result = (
+#             client.query
+#             .get(CLASS_NAME, ["content", "file_id"])
+#             .with_near_vector({"vector": query_vector})
+#             .with_where({
+#                 "path": ["user_id"],
+#                 "operator": "Equal",
+#                 "valueString": str(user_id)
+#             })
+#             .with_limit(limit)
+#             .do()
+#         )
+
+#         return result
+
+#     except Exception as e:
+#         raise RuntimeError(f"Query failed: {str(e)}")
+
 def query_weaviate(query: str, user_id: str, limit: int = 5):
     try:
         client = get_client()
+
+        # 🔴 safety check (prevents list/int crash)
+        if isinstance(limit, list):
+            limit = limit[0]
+
+        limit = int(limit)
 
         query_vector = generate_embedding(query)
 
         result = (
             client.query
-            .get(CLASS_NAME, ["content", "file_id"])
+            .get("Document", ["content", "file_id"])
             .with_near_vector({"vector": query_vector})
             .with_where({
                 "path": ["user_id"],
