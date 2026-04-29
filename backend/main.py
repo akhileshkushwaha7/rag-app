@@ -1,24 +1,29 @@
+
 # # main.py
 # from fastapi import FastAPI
 # from fastapi.middleware.cors import CORSMiddleware
 # from contextlib import asynccontextmanager
 
-# from db.database import init_db, weaviate_client # Import the client
+# from db.database import init_db, init_weaviate, weaviate_client
 # from routers import auth, chat
 # from services.rag_service import create_weaviate_schema
 
+
 # @asynccontextmanager
 # async def lifespan(app: FastAPI):
-#     # On startup
+#     # Startup
 #     await init_db()
+#     init_weaviate()
 #     create_weaviate_schema()
 #     yield
-#     # On shutdown
-#     weaviate_client.close() # Key Change: Close the client connection
+#     # Shutdown
+#     if weaviate_client is not None:
+#         weaviate_client.close()
+#         print("✅ Weaviate connection closed")
+
 
 # app = FastAPI(lifespan=lifespan)
 
-# # CORS Middleware
 # app.add_middleware(
 #     CORSMiddleware,
 #     allow_origins=["*"],
@@ -34,27 +39,37 @@
 # def read_root():
 #     return {"Hello": "World"}
 
-
-# main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from db.database import init_db, init_weaviate, weaviate_client
+from db.database import init_db, init_weaviate
+import db.database as database  # ✅ FIX: import module, not variable
+
 from routers import auth, chat
 from services.rag_service import create_weaviate_schema
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
+    # =========================
+    # 🚀 STARTUP
+    # =========================
     await init_db()
     init_weaviate()
-    create_weaviate_schema()
+
+    if database.weaviate_client is None:
+        print("❌ Weaviate NOT initialized - stopping startup")
+    else:
+        create_weaviate_schema()
+
     yield
-    # Shutdown
-    if weaviate_client is not None:
-        weaviate_client.close()
+
+    # =========================
+    # 🧹 SHUTDOWN
+    # =========================
+    if database.weaviate_client is not None:
+        database.weaviate_client.close()
         print("✅ Weaviate connection closed")
 
 
@@ -70,6 +85,7 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(chat.router, prefix="/api", tags=["chat"])
+
 
 @app.get("/")
 def read_root():
