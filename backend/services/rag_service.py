@@ -337,7 +337,7 @@ def process_and_embed_file(file_path: str, user_id: str, file_id: str) -> int:
 # =========================
 # 🔍 QUERY FUNCTION
 # =========================
-def query_documents(query: str, user_id: str, limit: int = 5):
+def query_weaviate(query: str, user_id: str, limit: int = 5):
     try:
         client = get_client()
 
