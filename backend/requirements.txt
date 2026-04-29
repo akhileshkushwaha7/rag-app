@@ -41,6 +41,7 @@ pydantic-settings==2.9.1
 pydantic_core==2.33.2
 PyJWT==2.8.0
 pypdf
+PyPDF2
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.0
 python-multipart==0.0.20
