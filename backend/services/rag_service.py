@@ -281,13 +281,57 @@ def generate_embedding(text: str) -> List[float]:
 # =========================
 # 📄 FILE READER
 # =========================
+# def read_file(file_path: str) -> str:
+#     try:
+#         with open(file_path, "r", encoding="utf-8") as f:
+#             return f.read()
+#     except Exception as e:
+#         raise RuntimeError(f"Failed to read file: {str(e)}")
+
+import os
+
 def read_file(file_path: str) -> str:
+    ext = os.path.splitext(file_path)[1].lower()
+
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            return f.read()
+        # -------------------------
+        # TEXT FILES
+        # -------------------------
+        if ext in [".txt", ".csv", ".log"]:
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                return f.read()
+
+        # -------------------------
+        # PDF FILES
+        # -------------------------
+        elif ext == ".pdf":
+            import PyPDF2
+
+            text = ""
+            with open(file_path, "rb") as f:
+                reader = PyPDF2.PdfReader(f)
+                for page in reader.pages:
+                    text += page.extract_text() or ""
+            return text
+
+        # -------------------------
+        # DOCX FILES
+        # -------------------------
+        elif ext == ".docx":
+            import docx
+
+            doc = docx.Document(file_path)
+            return "\n".join([p.text for p in doc.paragraphs])
+
+        # -------------------------
+        # UNSUPPORTED
+        # -------------------------
+        else:
+            raise RuntimeError(f"Unsupported file type: {ext}")
+
     except Exception as e:
         raise RuntimeError(f"Failed to read file: {str(e)}")
-
+        
 
 # =========================
 # 🚀 MAIN PROCESS FUNCTION
