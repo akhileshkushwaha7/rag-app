@@ -61,33 +61,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 // };
 const login = async (email: string, password: string) => {
   try {
-    const res = await fetch(
-      "https://rag-app-ai1w.onrender.com/auth/login",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", // IMPORTANT
-        body: JSON.stringify({ email, password }),
-      }
-    );
+    const res = await fetch("https://rag-app-ai1w.onrender.com/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
 
     const data = await res.json();
 
-    if (!res.ok) {
-      console.log("Login failed:", data);
-      return false;
-    }
+    if (!res.ok) return false;
 
-    // ❌ REMOVE token logic completely
+    // backend returns session_id
+    const token = data.session_id;
 
-    setUser({ email });
-    setToken(data.session_id); // optional (or remove setToken entirely)
+    if (!token) return false;
+
+    localStorage.setItem("token", token);
+    setIsAuthenticated(true);
 
     return true;
   } catch (err) {
-    console.error("Login error:", err);
+    console.error(err);
     return false;
   }
 };
