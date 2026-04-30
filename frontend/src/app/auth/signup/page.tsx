@@ -98,7 +98,7 @@ export default function SignupPage() {
     try {
       const success = await signup(email, password);
 
-      if (success) {
+      if (success===true) {
         toast.success("Account created successfully! Please sign in.");
         router.push("/auth/login");
       } else {
