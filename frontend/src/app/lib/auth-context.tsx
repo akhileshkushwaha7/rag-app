@@ -77,12 +77,13 @@ const signup = async (email: string, password: string) => {
 
     const data = await res.json();
 
-    if (!res.ok) {
-      console.error("Signup error:", data);
+    console.log("Signup response:", data); // 👈 DEBUG
+
+    if (res.ok) {
+      return true; // ✅ success
+    } else {
       return data.detail || "Signup failed";
     }
-
-    return true;
   } catch (err) {
     console.error("Signup error:", err);
     return "Network error";
