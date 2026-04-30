@@ -124,7 +124,7 @@ export default function ChatPage() {
       try {
         const token = getToken();
 
-        const res = await api.get("/chat/sessions", {
+        const res = await api.get("/api/chat/sessions", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
