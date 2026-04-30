@@ -1,54 +1,148 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 
-type AuthContextType = {
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (token: string) => void;
-  logout: () => void;
-};
-
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<any>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [token, setToken] = useState<string | null>(null);
 
-  // 🔥 CRITICAL FIX: hydrate FIRST before rendering routes
+  // load from storage on refresh
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const savedToken = localStorage.getItem("token");
+    const savedUser = localStorage.getItem("user");
 
-    if (token) {
-      setIsAuthenticated(true);
-    } else {
-      setIsAuthenticated(false);
-    }
-
-    setIsLoading(false);
+    if (savedToken) setToken(savedToken);
+    if (savedUser) setUser(JSON.parse(savedUser));
   }, []);
 
-  const login = (token: string) => {
-    localStorage.setItem("token", token);
-    setIsAuthenticated(true);
-  };
+  // ---------------- LOGIN ----------------
+// const login = async (email: string, password: string) => {
+//   try {
+//     const res = await fetch(
+//       "https://rag-app-ai1w.onrender.com/auth/login",
+//       {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify({ email, password }),
+//       }
+//     );
 
+//     const data = await res.json();
+
+//     if (!res.ok) {
+//       console.log("Login failed:", data);
+//       return false;
+//     }
+
+//     // 🔥 SUPPORT MULTIPLE BACKEND FORMATS
+//     const token = data.token || data.access_token;
+//     const user = data.user || { email };
+
+//     if (!token) {
+//       console.error("No token returned from backend");
+//       return false;
+//     }
+
+//     setUser(user);
+//     setToken(token);
+
+//     localStorage.setItem("token", token);
+//     localStorage.setItem("user", JSON.stringify(user));
+
+//     return true;
+//   } catch (err) {
+//     console.error("Login error:", err);
+//     return false;
+//   }
+// };
+const login = async (email: string, password: string) => {
+  try {
+    const res = await fetch(
+      "https://rag-app-ai1w.onrender.com/auth/login",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // IMPORTANT
+        body: JSON.stringify({ email, password }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.log("Login failed:", data);
+      return false;
+    }
+
+    // ❌ REMOVE token logic completely
+
+    setUser({ email });
+    setToken(data.session_id); // optional (or remove setToken entirely)
+
+    return true;
+  } catch (err) {
+    console.error("Login error:", err);
+    return false;
+  }
+};
+  // ---------------- SIGNUP (ADDED) ----------------
+
+const signup = async (email: string, password: string) => {
+  try {
+    const res = await fetch(
+      "https://rag-app-ai1w.onrender.com/auth/signup",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      }
+    );
+
+    const data = await res.json();
+
+    console.log("Signup response:", data); // 👈 DEBUG
+
+    if (res.ok) {
+      return true; // ✅ success
+    } else {
+      return data.detail || "Signup failed";
+    }
+  } catch (err) {
+    console.error("Signup error:", err);
+    return "Network error";
+  }
+};
+  // ---------------- LOGOUT ----------------
   const logout = () => {
+    setUser(null);
+    setToken(null);
+
     localStorage.removeItem("token");
-    setIsAuthenticated(false);
+    localStorage.removeItem("user");
   };
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, isLoading, login, logout }}
+      value={{
+        user,
+        token,
+        login,
+        signup, // ✅ IMPORTANT ADDED
+        logout,
+        isAuthenticated: !!token,
+      }}
     >
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
-  return ctx;
-};
+export const useAuth = () => useContext(AuthContext);
