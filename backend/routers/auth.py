@@ -22,6 +22,7 @@ async def signup(user_data: UserCreate, db: AsyncSession = Depends(get_db_sessio
     # Check if user already exists
     result = await db.execute(select(User).where(User.email == user_data.email))
     if result.scalars().first():
+        print("❌ User already exists:", user_data.email)
         raise HTTPException(status_code=400, detail="Email already registered")
     
     # Create new user
