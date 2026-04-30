@@ -1,11 +1,9 @@
-
 "use client";
+
 import {
   useState,
-  useRef,
   useEffect,
   FormEvent,
-  ChangeEvent,
   memo,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -15,7 +13,6 @@ import axios from "axios";
 import TextareaAutosize from "react-textarea-autosize";
 import { Button } from "@/app/components/ui/button";
 import {
-  Paperclip,
   Send,
   LogOut,
   MessageSquarePlus,
@@ -23,13 +20,14 @@ import {
   PanelLeftClose,
   Trash2,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 // ---------------- Types ----------------
 interface Message {
   role: "user" | "assistant";
   message: string;
 }
+
 interface ChatSession {
   id: string;
   title: string;
@@ -109,20 +107,28 @@ export default function ChatPage() {
   const router = useRouter();
   const { logout, isAuthenticated, isLoading: authLoading } = useAuth();
 
-  const getToken = () => localStorage.getItem("token");
+  const getToken = () => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("token");
+  };
 
-  // ---------------- Auth Guard ----------------
+  // ---------------- FIXED AUTH GUARD ----------------
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push("/auth/login");
+    if (authLoading) return; // ⛔ wait until auth is ready
+
+    const token = getToken();
+
+    if (!token) {
+      router.replace("/auth/login");
     }
-  }, [isAuthenticated, authLoading, router]);
+  }, [authLoading, router]);
 
   // ---------------- Load Sessions ----------------
   useEffect(() => {
     const fetchChatSessions = async () => {
       try {
         const token = getToken();
+        if (!token) return;
 
         const res = await api.get("/api/chat/sessions", {
           headers: {
@@ -133,20 +139,21 @@ export default function ChatPage() {
         setChatSessions(res.data);
       } catch (err) {
         if (axios.isAxiosError(err) && err.response?.status === 401) {
-          router.push("/auth/login");
+          router.replace("/auth/login");
         }
       }
     };
 
-    if (isAuthenticated) fetchChatSessions();
-  }, [isAuthenticated, router]);
+    if (!authLoading) fetchChatSessions();
+  }, [authLoading, router]);
 
-  // ---------------- Load Session Messages ----------------
+  // ---------------- Load Messages ----------------
   const fetchSessionMessages = async (sessionId: string) => {
     try {
       setActiveSessionId(sessionId);
 
       const token = getToken();
+      if (!token) return;
 
       const res = await api.get(`/chat/history/${sessionId}`, {
         headers: {
@@ -162,16 +169,21 @@ export default function ChatPage() {
     }
   };
 
-  // ---------------- Send Message (/api/chat FIXED) ----------------
+  // ---------------- Send Message ----------------
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     if (!input.trim() || isLoading) return;
 
+    const token = getToken();
+    if (!token) {
+      router.replace("/auth/login");
+      return;
+    }
+
     const userMsg: Message = { role: "user", message: input };
     setMessages((prev) => [...prev, userMsg]);
 
-    const token = getToken();
     const sessionId = activeSessionId || crypto.randomUUID();
 
     setInput("");
@@ -217,7 +229,7 @@ export default function ChatPage() {
   const handleLogout = () => {
     logout();
     localStorage.removeItem("token");
-    router.push("/auth/login");
+    router.replace("/auth/login");
   };
 
   return (
