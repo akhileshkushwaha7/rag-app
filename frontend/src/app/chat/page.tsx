@@ -294,7 +294,7 @@ export default function ChatPage() {
     const sessionIdToSend = activeSessionId || crypto.randomUUID();
 
     try {
-      const response = await axios.post("/api/chat", { query: currentInput, session_id: sessionIdToSend }, { withCredentials: true });
+      const response = await api.post("/api/chat", { query: currentInput, session_id: sessionIdToSend }, { withCredentials: true });
       const botMsg: Message = { role: "assistant", message: response.data.response };
       setMessages((prev) => [...prev, botMsg]);
       if (!activeSessionId) {
