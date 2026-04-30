@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 const login = async (email: string, password: string) => {
   try {
     const res = await fetch(
-      "https://rag-app-ai1w.onrender.com/api/login",
+      "https://rag-app-ai1w.onrender.com/auth/login",
       {
         method: "POST",
         headers: {
@@ -65,7 +65,7 @@ const login = async (email: string, password: string) => {
 const signup = async (email: string, password: string) => {
   try {
     const res = await fetch(
-      "https://rag-app-ai1w.onrender.com/api/signup",
+      "https://rag-app-ai1w.onrender.com/auth/signup",
       {
         method: "POST",
         headers: {
