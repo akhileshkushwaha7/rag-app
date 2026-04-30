@@ -938,45 +938,54 @@ export default function ChatPage() {
 
   // ---------------- SEND ----------------
   const send = async (e: FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!input.trim()) return;
+  if (!input.trim()) return;
 
-    const sessionId = activeSessionId || crypto.randomUUID();
+  const sessionId =
+    activeSessionId || localStorage.getItem("session_id");
 
-    const form = new FormData();
-    form.append("query", input);
-    form.append("session_id", sessionId);
-    if (file) form.append("file", file);
+  if (!sessionId) {
+    console.error("No session_id found");
+    return;
+  }
 
-    setMessages((p) => [...p, { role: "user", message: input }]);
-    setInput("");
-    setLoadingMsg(true);
+  const form = new FormData();
+  form.append("query", input);
+  form.append("session_id", sessionId);
+  if (file) form.append("file", file);
 
-    try {
-      const res = await api.post("/api/chat", form);
+  setMessages((p) => [...p, { role: "user", message: input }]);
+  setInput("");
+  setLoadingMsg(true);
 
-      setMessages((p) => [
+  try {
+    const res = await api.post("/api/chat", form);
+
+    setMessages((p) => [
+      ...p,
+      { role: "assistant", message: res.data.response },
+    ]);
+
+    // only set session once
+    if (!activeSessionId) {
+      setActiveSessionId(sessionId);
+
+      setChatSessions((p) => [
+        { id: sessionId, title: input },
         ...p,
-        { role: "assistant", message: res.data.response },
       ]);
-
-      if (!activeSessionId) {
-        setActiveSessionId(sessionId);
-        setChatSessions((p) => [
-          { id: sessionId, title: input },
-          ...p,
-        ]);
-      }
-    } catch {
-      setMessages((p) => [
-        ...p,
-        { role: "assistant", message: "Error" },
-      ]);
-    } finally {
-      setLoadingMsg(false);
     }
-  };
+  } catch (err) {
+    console.error(err);
+    setMessages((p) => [
+      ...p,
+      { role: "assistant", message: "Error" },
+    ]);
+  } finally {
+    setLoadingMsg(false);
+  }
+};
 
   return (
     <div className="flex h-screen bg-black text-white">
