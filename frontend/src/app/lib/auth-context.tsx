@@ -18,13 +18,47 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   // ---------------- LOGIN ----------------
-  const login = (data: any) => {
-    setUser(data.user);
-    setToken(data.token);
+const login = async (email: string, password: string) => {
+  try {
+    const res = await fetch(
+      "https://rag-app-ai1w.onrender.com/api/login",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      }
+    );
 
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
-  };
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.log("Login failed:", data);
+      return false;
+    }
+
+    // 🔥 SUPPORT MULTIPLE BACKEND FORMATS
+    const token = data.token || data.access_token;
+    const user = data.user || { email };
+
+    if (!token) {
+      console.error("No token returned from backend");
+      return false;
+    }
+
+    setUser(user);
+    setToken(token);
+
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(user));
+
+    return true;
+  } catch (err) {
+    console.error("Login error:", err);
+    return false;
+  }
+};
 
   // ---------------- SIGNUP (ADDED) ----------------
   const signup = async (email: string, password: string) => {
