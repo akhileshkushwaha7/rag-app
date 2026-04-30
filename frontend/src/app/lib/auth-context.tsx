@@ -61,28 +61,33 @@ const login = async (email: string, password: string) => {
 };
 
   // ---------------- SIGNUP (ADDED) ----------------
-  const signup = async (email: string, password: string) => {
-    try {
-      const res = await fetch(
-        "https://rag-app-ai1w.onrender.com/api/signup",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email, password }),
-        }
-      );
 
-      if (!res.ok) return false;
+const signup = async (email: string, password: string) => {
+  try {
+    const res = await fetch(
+      "https://rag-app-ai1w.onrender.com/api/signup",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      }
+    );
 
-      return true;
-    } catch (err) {
-      console.error("Signup error:", err);
-      return false;
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error("Signup error:", data);
+      return data.detail || "Signup failed";
     }
-  };
 
+    return true;
+  } catch (err) {
+    console.error("Signup error:", err);
+    return "Network error";
+  }
+};
   // ---------------- LOGOUT ----------------
   const logout = () => {
     setUser(null);
