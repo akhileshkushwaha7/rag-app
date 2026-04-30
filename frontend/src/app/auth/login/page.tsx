@@ -282,10 +282,13 @@ export default function LoginPage() {
     try {
       const success = await login(email, password);
 
-      if (success) {
-        toast.success("Login successful!");
-        router.replace("/chat"); // 🔥 use replace (prevents back-loop)
-      } else {
+      if (success  && typeof success === "object") {
+        if (success.session_id){
+          localStorage.setItem("session_id", success.session_id);// 🔥 use replace (prevents back-loop)
+      } 
+        toast.success("Login Successfull");
+        router.replace("/chat")
+        else {
         toast.error("Invalid credentials");
         setPasswordError("Invalid email or password");
       }
