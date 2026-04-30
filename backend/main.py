@@ -119,15 +119,11 @@ app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://rag-app-brown.vercel.app"],
+    allow_origins=[ "http://localhost:3000", "https://rag-app-brown.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# ✅ ADD THIS
-@app.options("/{full_path:path}")
-async def options_handler():
-    return {"message": "OK"}
 
 
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
