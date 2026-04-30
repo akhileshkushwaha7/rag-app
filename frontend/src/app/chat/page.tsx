@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect, FormEvent, ChangeEvent, memo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/lib/auth-context";
+import {api} from "@/app/lib/api"
 import axios from "axios";
 // import Cookies from "js-cookie";
 import TextareaAutosize from "react-textarea-autosize";
@@ -176,7 +177,7 @@ export default function ChatPage() {
   useEffect(() => {
     const fetchChatSessions = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/api/chat/sessions", { withCredentials: true });
+        const response = await api.get("/chat/sessions", { withCredentials: true });
         setChatSessions(response.data);
       } catch (error) {
         if (axios.isAxiosError(error) && error.response?.status === 401) router.push("/login");
@@ -219,7 +220,7 @@ export default function ChatPage() {
     setIsLoading(true);
     setMessages([]);
     try {
-      const response = await axios.get(`http://localhost:8000/api/chat/history/${sessionId}`, { withCredentials: true });
+      const response = await api.get(`/chat/history/${sessionId}`, { withCredentials: true });
       const formatted = response.data.map((msg: any) => ({ role: msg.role, message: msg.message }));
       setMessages(formatted);
     } catch {
@@ -259,7 +260,7 @@ export default function ChatPage() {
 
   const handleDeleteSession = async (sessionId: string) => {
     try {
-      await axios.delete(`http://localhost:8000/api/chat/sessions/${sessionId}`, { withCredentials: true });
+      await api.delete(`/chat/sessions/${sessionId}`, { withCredentials: true });
 
       // Remove from chat sessions list
       setChatSessions((prev) => prev.filter((session) => session.id !== sessionId));
@@ -272,7 +273,7 @@ export default function ChatPage() {
       }
 
       // Refresh sessions list
-      const response = await axios.get("http://localhost:8000/api/chat/sessions", { withCredentials: true });
+      const response = await api.get("/chat/sessions", { withCredentials: true });
       setChatSessions(response.data);
     } catch (error) {
       console.error("Error deleting session:", error);
@@ -293,7 +294,7 @@ export default function ChatPage() {
     const sessionIdToSend = activeSessionId || crypto.randomUUID();
 
     try {
-      const response = await axios.post("http://localhost:8000/api/chat", { query: currentInput, session_id: sessionIdToSend }, { withCredentials: true });
+      const response = await axios.post("/api/chat", { query: currentInput, session_id: sessionIdToSend }, { withCredentials: true });
       const botMsg: Message = { role: "assistant", message: response.data.response };
       setMessages((prev) => [...prev, botMsg]);
       if (!activeSessionId) {
