@@ -159,6 +159,122 @@
 // export const useAuth = () => useContext(AuthContext);
 
 
+// "use client";
+
+// import { createContext, useContext, useState, useEffect } from "react";
+
+// const AuthContext = createContext<any>(null);
+
+// export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+//   const [user, setUser] = useState<any>(null);
+//   const [token, setToken] = useState<string | null>(null);
+//   const [loading, setLoading] = useState(true);
+
+//   // ---------------- LOAD SESSION (FIXED) ----------------
+//   useEffect(() => {
+//     const savedToken = localStorage.getItem("session_id"); // ✅ FIXED
+//     const savedUser = localStorage.getItem("user");
+
+//     if (savedToken) setToken(savedToken);
+//     if (savedUser) setUser(JSON.parse(savedUser));
+
+//     setLoading(false);
+//   }, []);
+
+//   // ---------------- LOGIN ----------------
+//   const login = async (email: string, password: string) => {
+//     try {
+//       const res = await fetch(
+//         "https://rag-app-ai1w.onrender.com/auth/login",
+//         {
+//           method: "POST",
+//           headers: {
+//             "Content-Type": "application/json",
+//           },
+//           body: JSON.stringify({ email, password }),
+//         }
+//       );
+
+//       const data = await res.json();
+
+//       if (!res.ok) {
+//         console.log("Login failed:", data);
+//         return false;
+//       }
+
+//       const sessionId = data?.session_id;
+//       if (!sessionId) {
+//         console.error("No session_id returned", data);
+//         return false;
+//       }
+
+//       const userData = data?.user ?? { email };
+
+//       // ✅ SINGLE SOURCE OF TRUTH
+//       localStorage.setItem("session_id", sessionId);
+//       localStorage.setItem("user", JSON.stringify(userData));
+
+//       setToken(sessionId);
+//       setUser(userData);
+
+//       return true;
+//     } catch (err) {
+//       console.error("Login error:", err);
+//       return false;
+//     }
+//   };
+
+//   // ---------------- SIGNUP ----------------
+//   const signup = async (email: string, password: string) => {
+//     try {
+//       const res = await fetch(
+//         "https://rag-app-ai1w.onrender.com/auth/signup",
+//         {
+//           method: "POST",
+//           headers: {
+//             "Content-Type": "application/json",
+//           },
+//           body: JSON.stringify({ email, password }),
+//         }
+//       );
+
+//       const data = await res.json();
+
+//       if (res.ok) return true;
+
+//       return data.detail || "Signup failed";
+//     } catch (err) {
+//       return "Network error";
+//     }
+//   };
+
+//   // ---------------- LOGOUT ----------------
+//   const logout = () => {
+//     setUser(null);
+//     setToken(null);
+
+//     localStorage.removeItem("session_id"); // ✅ FIXED
+//     localStorage.removeItem("user");
+//   };
+
+//   return (
+//     <AuthContext.Provider
+//       value={{
+//         user,
+//         token,
+//         login,
+//         signup,
+//         logout,
+//         loading, // ✅ IMPORTANT
+//         isAuthenticated: !!token,
+//       }}
+//     >
+//       {children}
+//     </AuthContext.Provider>
+//   );
+// };
+
+// export const useAuth = () => useContext(AuthContext);
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";
@@ -170,12 +286,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // ---------------- LOAD SESSION (FIXED) ----------------
+  // ---------------- LOAD SESSION ----------------
   useEffect(() => {
-    const savedToken = localStorage.getItem("session_id"); // ✅ FIXED
+    const session = localStorage.getItem("session_id");
     const savedUser = localStorage.getItem("user");
 
-    if (savedToken) setToken(savedToken);
+    if (session) setToken(session);
     if (savedUser) setUser(JSON.parse(savedUser));
 
     setLoading(false);
@@ -188,29 +304,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         "https://rag-app-ai1w.onrender.com/auth/login",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
         }
       );
 
       const data = await res.json();
 
-      if (!res.ok) {
-        console.log("Login failed:", data);
-        return false;
-      }
+      if (!res.ok) return false;
 
-      const sessionId = data?.session_id;
-      if (!sessionId) {
-        console.error("No session_id returned", data);
-        return false;
-      }
+      const sessionId = data.session_id;
+      if (!sessionId) return false;
 
-      const userData = data?.user ?? { email };
+      const userData = data.user ?? { email };
 
-      // ✅ SINGLE SOURCE OF TRUTH
       localStorage.setItem("session_id", sessionId);
       localStorage.setItem("user", JSON.stringify(userData));
 
@@ -218,8 +325,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(userData);
 
       return true;
-    } catch (err) {
-      console.error("Login error:", err);
+    } catch {
       return false;
     }
   };
@@ -231,20 +337,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         "https://rag-app-ai1w.onrender.com/auth/signup",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
         }
       );
 
       const data = await res.json();
 
-      if (res.ok) return true;
-
-      return data.detail || "Signup failed";
-    } catch (err) {
-      return "Network error";
+      return res.ok ? true : data.detail || false;
+    } catch {
+      return false;
     }
   };
 
@@ -253,7 +355,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
     setToken(null);
 
-    localStorage.removeItem("session_id"); // ✅ FIXED
+    localStorage.removeItem("session_id");
     localStorage.removeItem("user");
   };
 
@@ -265,7 +367,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         login,
         signup,
         logout,
-        loading, // ✅ IMPORTANT
+        loading,
         isAuthenticated: !!token,
       }}
     >
@@ -275,3 +377,4 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+
