@@ -59,7 +59,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 //     return false;
 //   }
 // };
-
 const login = async (email: string, password: string) => {
   try {
     const res = await fetch(
@@ -80,20 +79,21 @@ const login = async (email: string, password: string) => {
       return false;
     }
 
-    // ✅ SUPPORT YOUR BACKEND RESPONSE
-    const sessionId = data.session_id;
-    const user = data.user || { email };
-
+    const sessionId = data?.session_id;
     if (!sessionId) {
-      console.error("No session_id returned from backend");
+      console.error("No session_id returned from backend", data);
       return false;
     }
 
-    setUser(user);
-    setToken(sessionId); // treat session_id as auth identifier
+    const user = data?.user ?? { email };
 
+    // ✅ FIRST persist to storage (prevents UI flicker timing issues)
     localStorage.setItem("session_id", sessionId);
     localStorage.setItem("user", JSON.stringify(user));
+
+    // ✅ THEN update React state in a single batch-like flow
+    setToken(sessionId);
+    setUser(user);
 
     return true;
   } catch (err) {
