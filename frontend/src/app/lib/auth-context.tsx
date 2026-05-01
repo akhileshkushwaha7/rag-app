@@ -42,8 +42,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       const data = await res.json();
       if (!res.ok) return false;
-
+      console.log(data.session_id)
       const sessionId = data.session_id || data.access_token || data.token;
+      
       if (!sessionId) return false;
 
       const userData = data.user ?? { email };
