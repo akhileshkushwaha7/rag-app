@@ -405,32 +405,45 @@ def process_and_embed_file(file_path: str, user_id: str, file_id: str) -> int:
 #     except Exception as e:
 #         raise RuntimeError(f"Query failed: {str(e)}")
 
-def query_weaviate(query: str, user_id: str, limit: int = 5):
+def query_weaviate(query: str, user_id: str, file_ids: list = None, limit: int = 5):
     try:
         client = get_client()
-
-        # 🔴 safety check (prevents list/int crash)
-        if isinstance(limit, list):
-            limit = limit[0]
 
         limit = int(limit)
 
         query_vector = generate_embedding(query)
 
+        where_filter = {
+            "operator": "And",
+            "operands": [
+                {
+                    "path": ["user_id"],
+                    "operator": "Equal",
+                    "valueString": str(user_id)
+                }
+            ]
+        }
+
+        if file_ids:
+            where_filter["operands"].append({
+                "path": ["file_id"],
+                "operator": "ContainsAny",
+                "valueTextArray": file_ids
+            })
+
         result = (
             client.query
             .get("Document", ["content", "file_id"])
             .with_near_vector({"vector": query_vector})
-            .with_where({
-                "path": ["user_id"],
-                "operator": "Equal",
-                "valueString": str(user_id)
-            })
+            .with_where(where_filter)
             .with_limit(limit)
             .do()
         )
 
-        return result
+        # ✅ NORMALIZE OUTPUT (VERY IMPORTANT FIX)
+        data = result.get("data", {}).get("Get", {}).get("Document", [])
+
+        return data
 
     except Exception as e:
         raise RuntimeError(f"Query failed: {str(e)}")
