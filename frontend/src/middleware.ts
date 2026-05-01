@@ -1,14 +1,24 @@
-"use client";
 
-import { useEffect } from "react";
+import type { NextRequest } from "next/server";
 
-export default function ChatLayout({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    const session = localStorage.getItem("session_id");
-    if (!session) {
-      window.location.href = "/auth/login";
+export function middleware(request: NextRequest) {
+
+  const { pathname } = request.nextUrl;
+
+  // Only protect /chat routes — let everything else through
+  if (pathname.startsWith("/chat")) {
+    const sessionId = request.cookies.get("session_id")?.value;
+    if (!sessionId) {
+      return NextResponse.redirect(new URL("/auth/login", request.url));
     }
-  }, []);
 
-  return <>{children}</>;
+
+
+  }
+
+  return NextResponse.next();
 }
+
+export const config = {
+  matcher: ["/chat/:path*"],
+};
