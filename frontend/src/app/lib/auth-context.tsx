@@ -1,100 +1,18 @@
-// "use client";
-
-// import { createContext, useContext, useState, useEffect } from "react";
-
-// const AuthContext = createContext<any>(null);
-
-// export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-//   const [user, setUser] = useState<any>(null);
-//   const [token, setToken] = useState<string | null>(null);
-//   const [loading, setLoading] = useState(true);
-
-//   // Load session from localStorage (client-only, runs after hydration)
-//   useEffect(() => {
-//     try {
-//       const session = localStorage.getItem("session_id");
-//       const savedUser = localStorage.getItem("user");
-
-//       if (session) setToken(session);
-//       if (savedUser) setUser(JSON.parse(savedUser));
-//     } catch (e) {
-//       // localStorage unavailable (SSR guard)
-//       console.warn("Could not read from localStorage", e);
-//     } finally {
-//       // Always unblock the UI — this is the critical line
-//       setLoading(false);
-//     }
-//   }, []);
-
-//   // ---------------- LOGIN ----------------
-//   const login = async (email: string, password: string) => {
-//     try {
-//       const res = await fetch("https://rag-app-ai1w.onrender.com/auth/login", {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({ email, password }),
-//       });
-
-//       const data = await res.json();
-
-//       if (!res.ok) return false;
-
-//       const sessionId = data.session_id;
-//       if (!sessionId) return false;
-
-//       const userData = data.user ?? { email };
-
-//       localStorage.setItem("session_id", sessionId);
-//       localStorage.setItem("user", JSON.stringify(userData));
-
-//       setToken(sessionId);
-//       setUser(userData);
-
-//       return true;
-//     } catch {
-//       return false;
-//     }
-//   };
-
-//   // ---------------- SIGNUP ----------------
-//   const signup = async (email: string, password: string) => {
-//     try {
-//       const res = await fetch("https://rag-app-ai1w.onrender.com/auth/signup", {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({ email, password }),
-//       });
-
-//       const data = await res.json();
-//       return res.ok ? true : data.detail || false;
-//     } catch {
-//       return false;
-//     }
-//   };
-
-//   // ---------------- LOGOUT ----------------
-//   const logout = () => {
-//     setUser(null);
-//     setToken(null);
-//     localStorage.removeItem("session_id");
-//     localStorage.removeItem("user");
-//   };
-
-//   return (
-//     <AuthContext.Provider
-//       value={{ user, token, login, signup, logout, loading, isAuthenticated: !!token }}
-//     >
-//       {children}
-//     </AuthContext.Provider>
-//   );
-// };
-
-// export const useAuth = () => useContext(AuthContext);
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 
 const AuthContext = createContext<any>(null);
+
+// Helper to set a cookie
+function setCookie(name: string, value: string, days = 7) {
+  const expires = new Date(Date.now() + days * 864e5).toUTCString();
+  document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Lax`;
+}
+
+function deleteCookie(name: string) {
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+}
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<any>(null);
@@ -125,20 +43,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const data = await res.json();
       if (!res.ok) return false;
 
-      // FIX: support both token formats the backend might return
       const sessionId = data.session_id || data.access_token || data.token;
-      if (!sessionId) {
-        console.error("No session token in response:", data);
-        return false;
-      }
+      if (!sessionId) return false;
 
       const userData = data.user ?? { email };
 
-      // Write to localStorage FIRST, then update state
+      // Save to both localStorage AND cookie (cookie is needed for middleware)
       localStorage.setItem("session_id", sessionId);
       localStorage.setItem("user", JSON.stringify(userData));
+      setCookie("session_id", sessionId);
 
-      // Batch state updates together
       setToken(sessionId);
       setUser(userData);
 
@@ -168,6 +82,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setToken(null);
     localStorage.removeItem("session_id");
     localStorage.removeItem("user");
+    deleteCookie("session_id");
   }, []);
 
   return (
@@ -178,4 +93,3 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
-
