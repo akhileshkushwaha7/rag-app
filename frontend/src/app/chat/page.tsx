@@ -112,7 +112,7 @@ export default function ChatPage() {
     e.preventDefault();
     if (!input.trim() || loadingMsg) return;
 
-    const sessionId = activeSessionId || crypto.randomUUID();
+    const sessionId = activeSessionId || getToken(token) || crypto.randomUUID();
 
     setMessages((p) => [...p, { role: "user", message: input }]);
     const currentInput = input;
