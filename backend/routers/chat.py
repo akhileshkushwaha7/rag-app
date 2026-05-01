@@ -709,7 +709,7 @@ MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
 
 class ChatQuery(BaseModel):
     query: str
-    session_id: uuid.UUID
+    session_id: str
     file_id: Optional[str] = None
 
 
