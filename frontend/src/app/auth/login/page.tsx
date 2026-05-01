@@ -158,6 +158,7 @@ import { toast } from "sonner";
 // ✅ FIXED cookie string
 function syncCookie() {
   const session = localStorage.getItem("session_id");
+  console.log(session)
   if (session) {
     const expires = new Date(Date.now() + 7 * 864e5).toUTCString();
     document.cookie = `session_id=${session}; expires=${expires}; path=/; SameSite=Lax`;
