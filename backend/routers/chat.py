@@ -527,8 +527,8 @@ async def chat(
         print("Chunks retrieved:", len(context_chunks))
 
         context = "\n---\n".join(
-            [c.get("content", "") for c in context_chunks if c.get("content")]
-        )
+    [c if isinstance(c, str) else str(c.get("content", "")) for c in context_chunks]
+)
 
         prompt = f"""
 You are a helpful assistant.
