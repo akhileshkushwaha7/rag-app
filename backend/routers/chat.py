@@ -525,11 +525,32 @@ async def chat(
         context_chunks = query_weaviate(chat_query.query, user_id, file_ids) or []
 
         print("Chunks retrieved:", len(context_chunks))
-
+        print("\n=== RAW CHUNKS ===")
+        print(context_chunks)
+        print("===================\n")
+        for c in context_chunks:
+            print("TYPE:", type(c))
+            print("VALUE:", c)
+#         context = "\n---\n".join(
+            
+#     [c if isinstance(c, str) else str(c.get("content", "")) for c in context_chunks]
+# )
         context = "\n---\n".join(
-    [c if isinstance(c, str) else str(c.get("content", "")) for c in context_chunks]
+    [
+        (
+            c.get("content")
+            or c.get("text")
+            or c.get("page_content")
+            or str(c)
+        )
+        if isinstance(c, dict)
+        else str(c)
+        for c in context_chunks
+    ]
 )
-
+        print("FINAL CONTEXT ===")
+        print(context)
+        print("==================")
         prompt = f"""
 You are a helpful assistant.
 
