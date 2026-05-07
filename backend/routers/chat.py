@@ -884,6 +884,32 @@ async def get_chat_history(
 # =========================
 # SESSIONS
 # =========================
+# @router.get("/chat/sessions")
+# async def get_chat_sessions(
+#     db: AsyncSession = Depends(get_db_session),
+#     current_user: User = Depends(get_current_user)
+# ):
+#     subquery = (
+#         select(
+#             ChatHistory.session_id,
+#             ChatHistory.message,
+#             ChatHistory.timestamp,
+#             func.row_number().over(
+#                 partition_by=ChatHistory.session_id,
+#                 order_by=desc(ChatHistory.timestamp)
+#             ).label('rn')
+#         )
+#         .where(ChatHistory.user_id == current_user.id)
+#         .subquery()
+#     )
+
+#     result = await db.execute(
+#         select(subquery.c.session_id, subquery.c.message)
+#         .where(subquery.c.rn == 1)
+#         .order_by(desc(subquery.c.timestamp))
+#     )
+
+#     return [{"id": str(s.session_id), "title": s.message} for s in result.all()]
 @router.get("/chat/sessions")
 async def get_chat_sessions(
     db: AsyncSession = Depends(get_db_session),
@@ -896,8 +922,8 @@ async def get_chat_sessions(
             ChatHistory.timestamp,
             func.row_number().over(
                 partition_by=ChatHistory.session_id,
-                order_by=desc(ChatHistory.timestamp)
-            ).label('rn')
+                order_by=ChatHistory.timestamp.desc()
+            ).label("rn")
         )
         .where(ChatHistory.user_id == current_user.id)
         .subquery()
@@ -906,11 +932,13 @@ async def get_chat_sessions(
     result = await db.execute(
         select(subquery.c.session_id, subquery.c.message)
         .where(subquery.c.rn == 1)
-        .order_by(desc(subquery.c.timestamp))
+        .order_by(subquery.c.timestamp.desc())
     )
 
-    return [{"id": str(s.session_id), "title": s.message} for s in result.all()]
-
+    return [
+        {"id": str(row.session_id), "title": row.message}
+        for row in result.all()
+    ]
 
 # =========================
 # DELETE SESSION
