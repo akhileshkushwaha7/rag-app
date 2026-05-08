@@ -46,13 +46,13 @@ async def login(user_data: UserLogin, response: Response, db: AsyncSession = Dep
     db.add(new_session)
     await db.commit()
     
-    response.set_cookie(key="session_token", value=session_token, httponly=True)
+    response.set_cookie(key="session_token", value=session_token, httponly=True, secure=True, samesite="none",)
     return {"message": "Login successful", "session_id": new_session.id}
 
 @router.post("/logout")
 async def logout(response: Response, db: AsyncSession = Depends(get_db_session)):
     # In a real app, you would get session_token from cookie/header to invalidate it
-    response.delete_cookie("session_token")
+    response.delete_cookie(key="session_token",samesite="none", secure=True,)
     return {"message": "Logout successful"}
 
 from fastapi import Request
