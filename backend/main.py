@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from db.database import init_db, init_weaviate
-import db.database as database  # ✅ FIX: import module, not variable
+import db.database as database 
 
 from routers import auth, chat
 from services.rag_service import create_weaviate_schema
@@ -17,31 +17,31 @@ from services.rag_service import create_weaviate_schema
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # =========================
-    # 🚀 STARTUP
+    #  STARTUP
     # =========================
-    print("🚀 Starting application...")
+    print(" Starting application...")
 
     await init_db()
 
     # Init Weaviate
     init_weaviate()
 
-    # 🔴 HARD CHECK (not just None check)
+    #  HARD CHECK (not just None check)
     client = database.weaviate_client
 
     if client is None:
-        print("❌ Weaviate failed to initialize")
+        print(" Weaviate failed to initialize")
     else:
         try:
             # 🔥 verify actual connection
             if hasattr(client, "is_ready") and not client.is_ready():
-                print("❌ Weaviate not ready")
+                print(" Weaviate not ready")
             else:
-                print("✅ Weaviate connected successfully")
+                print(" Weaviate connected successfully")
                 create_weaviate_schema()
 
         except Exception as e:
-            print(f"❌ Weaviate health check failed: {e}")
+            print(f" Weaviate health check failed: {e}")
             database.weaviate_client = None
 
     yield
@@ -54,9 +54,9 @@ async def lifespan(app: FastAPI):
     if database.weaviate_client is not None:
         try:
             database.weaviate_client.close()
-            print("✅ Weaviate connection closed")
+            print(" Weaviate connection closed")
         except Exception as e:
-            print(f"⚠️ Error closing Weaviate: {e}")
+            print(f" Error closing Weaviate: {e}")
 
 app = FastAPI(lifespan=lifespan)
 
