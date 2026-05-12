@@ -168,6 +168,3 @@ GROQ_MODEL=openai/gpt-oss-20b
 
 MIT
 
-## Support
-
-For detailed documentation, see `RAG_Application_Complete_Learning_Guide.docx`
